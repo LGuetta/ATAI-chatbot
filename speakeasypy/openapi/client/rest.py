@@ -119,7 +119,10 @@ class RESTClientObject(object):
         method = method.upper()
         assert method in ['GET', 'HEAD', 'DELETE', 'POST', 'PUT',
                           'PATCH', 'OPTIONS']
-
+        
+        if body and isinstance(body, str):
+            body = body.encode('utf-8')
+            
         if post_params and body:
             raise ApiValueError(
                 "body parameter cannot be used with post_params parameter."
@@ -142,13 +145,16 @@ class RESTClientObject(object):
             if method in ['POST', 'PUT', 'PATCH', 'OPTIONS', 'DELETE']:
                 # Only set a default Content-Type for POST, PUT, PATCH and OPTIONS requests
                 if (method != 'DELETE') and ('Content-Type' not in headers):
-                    headers['Content-Type'] = 'application/json'
+                    headers['Content-Type'] = 'application/json; charset=utf-8'
                 if query_params:
                     url += '?' + urlencode(query_params)
                 if ('Content-Type' not in headers) or (re.search('json', headers['Content-Type'], re.IGNORECASE)):
                     request_body = None
                     if body is not None:
                         request_body = json.dumps(body)
+                    # Encode the request body in UTF-8 if it's a string
+                    if isinstance(request_body, str):
+                        request_body = request_body.encode('utf-8')
                     r = self.pool_manager.request(
                         method, url,
                         body=request_body,
